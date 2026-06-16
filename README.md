@@ -6,7 +6,7 @@ An AI-powered web application that analyses knee MRI scans and detects ACL (Ante
 
 ## Live Demo
 
-> Deploy link appears here after Streamlit deployment
+> https://acl-tear-detection.streamlit.app/
 
 ---
 
@@ -73,7 +73,7 @@ The dataset is not included in this repository. To obtain it:
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/acl-tear-detection
+git clone https://github.com/IyinoluwaDon/acl-tear-detection
 cd acl-tear-detection
 
 # Install dependencies
@@ -91,7 +91,7 @@ streamlit run app.py
 
 ## Training Your Own Model
 
-The training notebook is not included in this repository. To retrain:
+The training notebook is included in this repository. To retrain:
 
 1. Download the MRNet dataset from one of the sources above
 2. Extract only the sagittal plane folders and ACL CSV labels
@@ -104,8 +104,8 @@ The training notebook is not included in this repository. To retrain:
        ├── train/sagittal/
        └── valid/sagittal/
    ```
-4. Use a ResNet18 backbone with max pooling across slices
-5. Train with BCEWithLogitsLoss and pos_weight to handle class imbalance
+4. Run the MRNet_ACL_Colab.ipynb file and edit file path consistency
+5. Measure metrics 
 
 ---
 
