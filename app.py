@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import os
 import tempfile
+from pathlib import Path
 
 # ── Optional imports for DICOM and NIfTI ─────────────────────
 try:
@@ -64,9 +65,9 @@ def load_model():
     model  = MRNetModel(dropout_rate=0.3).to(device)
 
     checkpoint = torch.load(
-        "best_model.pt",
+        Path(__file__).with_name("best_model.pt"),
         map_location=device,
-        weights_only=False
+        weights_only=True
     )
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
@@ -79,7 +80,7 @@ def load_model():
 
 def load_npy(file) -> np.ndarray:
     """Load MRNet-format numpy array."""
-    return np.load(file)
+    return np.load(file, allow_pickle=False)
 
 
 def load_dicom(file) -> np.ndarray:
@@ -92,9 +93,11 @@ def load_dicom(file) -> np.ndarray:
         tmp.write(file.read())
         tmp_path = tmp.name
 
-    ds     = pydicom.dcmread(tmp_path)
-    volume = ds.pixel_array.astype(np.float32)
-    os.unlink(tmp_path)
+    try:
+        ds = pydicom.dcmread(tmp_path)
+        volume = ds.pixel_array.astype(np.float32)
+    finally:
+        os.unlink(tmp_path)
 
     # If single slice, add slice dimension
     if volume.ndim == 2:
@@ -114,9 +117,11 @@ def load_nifti(file) -> np.ndarray:
         tmp.write(file.read())
         tmp_path = tmp.name
 
-    img    = nib.load(tmp_path)
-    volume = np.array(img.dataobj).astype(np.float32)
-    os.unlink(tmp_path)
+    try:
+        img = nib.load(tmp_path)
+        volume = np.array(img.dataobj).astype(np.float32)
+    finally:
+        os.unlink(tmp_path)
 
     # NIfTI is [H, W, slices] — transpose to [slices, H, W]
     if volume.ndim == 3:
@@ -164,6 +169,9 @@ def validate_scan(volume: np.ndarray):
             f"but got {volume.ndim}D data with shape {volume.shape}. "
             f"Please upload a sagittal knee MRI scan."
         )
+
+    if volume.size == 0 or not np.isfinite(volume).all():
+        return False, "The scan contains empty or non-finite voxel values."
 
     num_slices, height, width = volume.shape
 
