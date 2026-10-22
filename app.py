@@ -170,6 +170,8 @@ def validate_scan(volume: np.ndarray):
             f"Please upload a sagittal knee MRI scan."
         )
 
+    if not np.issubdtype(volume.dtype, np.number):
+        return False, "The scan must contain numeric voxel values."
     if volume.size == 0 or not np.isfinite(volume).all():
         return False, "The scan contains empty or non-finite voxel values."
 
@@ -355,8 +357,8 @@ def main():
         )
         st.caption(
             "**Default: 0.5**  \n"
-            "For clinical screening, consider lowering to 0.3 "
-            "to maximize sensitivity."
+            "Changing this threshold demonstrates the sensitivity/specificity "
+            "tradeoff. No threshold has been validated for clinical use."
         )
 
         st.divider()
@@ -388,7 +390,11 @@ def main():
 
         # Load scan
         with st.spinner("Loading scan..."):
-            volume = load_scan(uploaded_file)
+            try:
+                volume = load_scan(uploaded_file)
+            except Exception:
+                st.error("Could not decode this scan. Check that the file is intact and uses a supported format.")
+                st.stop()
 
         if volume is None:
             st.stop()
