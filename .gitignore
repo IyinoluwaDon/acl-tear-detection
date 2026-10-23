@@ -2,3 +2,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Local MRNet scans, source archive, and alternate model weights
+data/
+models/*.pt
