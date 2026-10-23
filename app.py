@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import os
 import tempfile
+import pickle
 from pathlib import Path
 
 # ── Optional imports for DICOM and NIfTI ─────────────────────
@@ -64,11 +65,18 @@ def load_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model  = MRNetModel(dropout_rate=0.3).to(device)
 
-    checkpoint = torch.load(
-        Path(__file__).with_name("best_model.pt"),
-        map_location=device,
-        weights_only=True
-    )
+    # This trusted local checkpoint stores a NumPy scalar alongside its tensor
+    # state. Allow only that scalar type while keeping Torch's restricted loader.
+    numpy_core = getattr(np, "_core", np.core)
+    numpy_scalar = numpy_core.multiarray.scalar
+    with torch.serialization.safe_globals(
+        [numpy_scalar, np.dtype, np.ndarray, type(np.dtype(np.float64))]
+    ):
+        checkpoint = torch.load(
+            Path(__file__).with_name("best_model.pt"),
+            map_location=device,
+            weights_only=True,
+        )
     model.load_state_dict(checkpoint["model_state"])
     model.eval()
     return model, device
@@ -287,10 +295,10 @@ def main():
         try:
             model, device = load_model()
             st.success(f"✓ Model loaded — running on **{str(device).upper()}**")
-        except (FileNotFoundError, RuntimeError, KeyError, ValueError):
+        except (FileNotFoundError, RuntimeError, KeyError, ValueError, pickle.UnpicklingError):
             st.error(
-                "Model file `best_model.pt` not found. "
-                "Make sure it is in the same directory as `app.py`."
+                "Could not load `best_model.pt`. Check that the checkpoint exists "
+                "beside `app.py` and matches this model architecture."
             )
             st.stop()
 
