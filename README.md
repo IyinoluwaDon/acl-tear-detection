@@ -1,35 +1,22 @@
-# ACL MRI Classification Research Demo
+# ACL Tear Classification from Knee MRI Volumes
 
-A Streamlit research demo that loads sagittal knee MRI volumes and runs a saved PyTorch classifier for an ACL-tear label. It accepts NumPy volumes and, when optional readers are installed, DICOM and NIfTI files.
+This project trains and serves a binary ACL-tear classifier on sagittal knee MRI volumes from the Stanford MRNet dataset. The Streamlit interface is the inference front end to a PyTorch model whose training workflow and evaluation are recorded in `MRNet_ACL_Colab.ipynb`.
 
-## What is included
+## Model and training
 
-- MRI volume input validation before inference
-- Saved ResNet-based slice-aggregation checkpoint
-- Optional DICOM and NIfTI readers
+The network uses an ImageNet-pretrained ResNet18 as a per-slice feature extractor. Each sagittal slice is min-max normalized, resized to 224 x 224, and replicated across three channels. The 512-dimensional ResNet feature vectors are max-pooled across the scan's variable number of slices, then passed through a 512->256->64->1 fully connected classifier with ReLU activations and 0.3 dropout.
 
-## Run locally
+Training uses binary cross-entropy with logits and a positive-class weight, Adam (learning rate 1e-4, weight decay 1e-5), a validation-AUC learning-rate scheduler, and early stopping (up to 30 epochs, patience 7). Training augmentation applies horizontal flips and rotations. The notebook reports a validation ROC AUC of **0.9719** for its selected checkpoint.
+
+## Data and files
+
+The training source is Stanford's MRNet knee MRI dataset. This workspace contains the `MRNet-v1.0` sagittal `.npy` volumes and ACL label CSVs under `data/`; the experiment notebook documents the training/validation split and Colab workflow. `best_model.pt` is the checkpoint loaded by the app. `app.py` handles inference, scan preprocessing, and optional DICOM/NIfTI/NumPy uploads; `scan_validation.py` checks volume structure; `tests/` covers the input contract.
+
+## Run
 
 ```sh
 python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Verify
-
-python -m pip install pytest
-python -m pytest -q
-
-## Repository map
-
-`app.py` contains the Streamlit interface, checkpoint loading and scan validation. `best_model.pt` is the local inference checkpoint. `MRNet_ACL_Colab.ipynb` records the experiment; `tests/` covers input validation.
-
-## Evidence and limitations
-
-The repository includes a checkpoint and request/scan-validation tests. The tests verify input contracts; reported historical model metrics have not been independently reproduced in this project.
-
-This is an unvalidated research prototype, not a diagnostic or clinical decision tool. Patient-level and external evaluation, data-use review, and clinical governance are outstanding. Training data is not included; obtain it from its authorized source and follow its terms. Do not upload identifiable patient data to a public deployment.
-
-## License
-
-No repository license file is included. Unless the project owner adds a license, do not assume the code, data or model artifacts may be redistributed or reused. Verify third-party data and model terms separately.
+The local app runs inference from `best_model.pt`; rerun the notebook to reproduce training and its reported evaluation.
