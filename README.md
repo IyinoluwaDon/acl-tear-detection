@@ -10,7 +10,13 @@ Training uses binary cross-entropy with logits and a positive-class weight, Adam
 
 ## Data and files
 
-The training source is Stanford's MRNet knee MRI dataset. This workspace contains the `MRNet-v1.0` sagittal `.npy` volumes and ACL label CSVs under `data/`; the experiment notebook documents the training/validation split and Colab workflow. `best_model.pt` is the checkpoint loaded by the app. `app.py` handles inference, scan preprocessing, and optional DICOM/NIfTI/NumPy uploads; `scan_validation.py` checks volume structure; `tests/` covers the input contract.
+The training source is Stanford's MRNet knee MRI dataset. The dataset is not
+stored in this repository; place the `MRNet-v1.0` sagittal `.npy` volumes and
+ACL label CSVs in the paths documented by the notebook before retraining.
+`best_model.pt` is the checkpoint loaded by the app. `app.py` handles
+inference, scan preprocessing, and optional DICOM/NIfTI/NumPy uploads;
+`scan_validation.py` checks volume structure; `tests/` covers the input
+contract.
 
 ## Run
 
